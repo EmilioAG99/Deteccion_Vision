@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='YOLO Object Detection')
 parser.add_argument('-i', "--input", help='input video file', required=True)
 args = parser.parse_args()
 
-cap = cv2.VideoCapture('input/' + args.input)
+cap = cv2.VideoCapture('input/' + args.input + ".mp4")
 
 # get the video frames' width and height for proper saving of videos
 frame_width = int(cap.get(3))
@@ -35,9 +35,14 @@ COLORS = loadingAttributes[1]
 yolo_model = loadingAttributes[2]
 ln = loadingAttributes[3]
 
-out = cv2.VideoWriter('output/video_result_1.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
-
+out = cv2.VideoWriter('output/yolo_{}_result.mp4'.format(args.input), cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
+objectCondifence = {}
 def analizeYolo(image):
+    # R, G, B = cv2.split(image)
+    # eq_R = cv2.equalizeHist(R)
+    # eq_G = cv2.equalizeHist(G)
+    # eq_B = cv2.equalizeHist(B)
+    # image = cv2.merge([eq_R, eq_G, eq_B])
     image_height, image_width, _ = image.shape
     blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (416, 416), crop=False)
     yolo_model.setInput(blob)
@@ -76,6 +81,7 @@ def analizeYolo(image):
                 boxes.append([x, y, int(width), int(height)])
                 confidences.append(round(float(confidence),2))
                 classIDs.append(classID)
+                objectCondifence[classname_yolo[classID]] = confidence
 
     idxs = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
 
@@ -102,6 +108,7 @@ while cap.isOpened():
         cv2.imshow('image', newFrame)
         out.write(newFrame)
         if cv2.waitKey(10) & 0xFF == ord('q'):
+            print(objectCondifence)
             break
     else:
         break

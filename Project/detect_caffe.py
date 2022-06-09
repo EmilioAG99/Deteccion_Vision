@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description='Caffe Object Detection')
 parser.add_argument('-i', "--input", help='input video file', required=True)
 args = parser.parse_args()
 
-cap = cv2.VideoCapture('input/' + args.input)
+cap = cv2.VideoCapture('input/' + args.input + ".mp4")
 
 # get the video frames' width and height for proper saving of videos
 frame_width = int(cap.get(3))
@@ -35,9 +35,14 @@ COLORS = loadingAttributes[1]
 mobile_net_caffe = loadingAttributes[2]
 
 # create the `VideoWriter()` object
-out = cv2.VideoWriter('output/video_result_1.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
-
+out = cv2.VideoWriter('output/caffe_{}_result.mp4'.format(args.input), cv2.VideoWriter_fourcc(*'mp4v'), 30, (frame_width, frame_height))
+objectCondifence = {}
 def analizeCaffe(image):
+    # R, G, B = cv2.split(image)
+    # eq_R = cv2.equalizeHist(R)
+    # eq_G = cv2.equalizeHist(G)
+    # eq_B = cv2.equalizeHist(B)
+    # image = cv2.merge([eq_R, eq_G, eq_B])
     image_height, image_width, _ = image.shape
     # create blob from image de 300*300 siempre -- espera una imagen de 3 canales
     blob = cv2.dnn.blobFromImage(image=image, size=(300, 300), mean=(104, 117, 123))
@@ -50,7 +55,7 @@ def analizeCaffe(image):
         confidence = detection[2]
         # draw bounding boxes only if the detection confidence is above...
         # ... a certain threshold, else skip
-        if confidence > .4:
+        if confidence > .3:
             # get the class id
             class_id = detection[1]
             # map the class id to the class
@@ -66,6 +71,7 @@ def analizeCaffe(image):
             cv2.rectangle(image, (int(box_x), int(box_y)), (int(box_width), int(box_height)), color, thickness=2)
             # put the FPS text on top of the frame
             cv2.putText(image, class_name + " "+ str(confidence), (int(box_x), int(box_y - 5)), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+            objectCondifence[class_name] = confidence
     return image
     
 #detect objects in each frame of the video
@@ -77,6 +83,7 @@ while cap.isOpened():
         cv2.imshow('image', newFrame)
         out.write(newFrame)
         if cv2.waitKey(10) & 0xFF == ord('q'):
+            print(objectCondifence)
             break
     else:
         break
